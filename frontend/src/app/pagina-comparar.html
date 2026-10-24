@@ -1,0 +1,30 @@
+<main class="contenedor ancho">
+  <h1>Comparación en vivo: REST + Polling y WebSockets</h1>
+  <p class="intro">Las dos columnas muestran la misma sala. Genera cambios externos y compara cuántas solicitudes o mensajes necesita cada mecanismo y cuánto tarda en reflejarse el cambio.</p>
+
+  <section class="controles" aria-label="Controles de la comparación">
+    <button type="button" class="boton primario" id="uno" (click)="uno()">Generar 1 cambio externo</button>
+    <button type="button" class="boton" id="cinco" (click)="cinco()">Generar 5 cambios (1 por segundo)</button>
+    <button type="button" class="boton" id="reiniciarContadores" (click)="reiniciarContadores()">Reiniciar contadores</button>
+    <button type="button" class="boton peligro" id="reiniciarSala" (click)="reiniciarSala()">Reiniciar la sala</button>
+    <span class="mensaje" id="estadoControles" role="status">{{ aviso() }}</span>
+  </section>
+
+  <div class="dos-columnas">
+    <div id="polling"><app-cine #cp mecanismo="polling" [metricas]="true" /></div>
+    <div id="ws"><app-cine #cw mecanismo="ws" [metricas]="true" /></div>
+  </div>
+
+  <section class="resumen-comparacion" aria-label="Resumen de la comparación">
+    <h2>Resumen observado</h2>
+    <table>
+      <thead><tr><th>Medida</th><th>REST + Polling</th><th>WebSocket</th></tr></thead>
+      <tbody>
+        <tr><td>Solicitudes / mensajes del cliente</td><td>{{ p().metricas().peticiones }}</td><td>{{ w().metricas().peticiones }}</td></tr>
+        <tr><td>Bytes recibidos</td><td>{{ miles(p().metricas().bytes) }}</td><td>{{ miles(w().metricas().bytes) }}</td></tr>
+        <tr><td>Consultas sin información nueva</td><td>{{ p().metricas().sinCambios }}</td><td>No aplica</td></tr>
+        <tr><td>Latencia media para reflejar un cambio</td><td>{{ media(p()) }}</td><td>{{ media(w()) }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>

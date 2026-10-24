@@ -1,0 +1,17 @@
+<header class="cabecera">
+  <div class="cabecera-int">
+    <img class="logo" src="espe.png" alt="ESPE Universidad de las Fuerzas Armadas. Innovación para la excelencia">
+    <div class="curso">
+      <strong>Aplicaciones Distribuidas</strong>
+      <span>Práctica 2 · Reserva de asientos: REST + Polling y WebSockets · NRC 37869</span>
+    </div>
+    <nav class="menu" aria-label="Páginas">
+      @for (e of enlaces; track e.ruta) {
+        <a [routerLink]="e.ruta" routerLinkActive ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: e.exacto }">{{ e.texto }}</a>
+      }
+    </nav>
+  </div>
+  <div class="filete"></div>
+</header>
+<router-outlet />
+<app-confirmar />

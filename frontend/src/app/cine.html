@@ -1,0 +1,90 @@
+<article class="tarjeta" [attr.data-mecanismo]="mecanismo()">
+  <header class="tarjeta-cab">
+    <div>
+      <h2>{{ mecanismo() === 'ws' ? 'WebSocket (Socket.IO)' : 'REST + Polling' }}</h2>
+      <p class="sub">{{ mecanismo() === 'ws' ? 'El servidor envía los cambios por una conexión persistente.' : 'El navegador pregunta al servidor cada cierto tiempo (HTTP GET).' }}</p>
+    </div>
+    <span class="estado-conexion" [class.activo]="cliente().conectado()" [class.caido]="!cliente().conectado() && cliente().textoConexion() === 'Sin conexión'">{{ cliente().textoConexion() }}</span>
+  </header>
+
+  @if (!cliente().conectado() && cliente().textoConexion() === 'Sin conexión') {
+    <p class="alerta-conexion" role="alert">Sin conexión con el servidor. Los cambios no se enviarán hasta que se restablezca.</p>
+  }
+
+  <p class="paso"><strong>1.</strong> Escribe tu nombre y pulsa Entrar. <strong>2.</strong> Elige tus asientos: tienes {{ segundos(cliente().reservaMs()) }} s para pagar.</p>
+  <div class="usuario">
+    <label>Usuario <input data-rol="nombre" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" (keydown.enter)="entrar()" maxlength="30" autocomplete="off" placeholder="Tu nombre"></label>
+    <button type="button" class="boton primario" data-rol="entrar" (click)="entrar()">Entrar</button>
+    @if (polling(); as p) {
+      <label>Intervalo
+        <select data-rol="intervalo" [ngModel]="'' + p.intervalo()" (ngModelChange)="cambiarIntervalo($event)">
+          <option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="5000">5 s</option>
+        </select>
+      </label>
+    }
+  </div>
+
+  <div class="escenario">
+    <div class="sala-col">
+      <div class="pantalla" aria-hidden="true">PANTALLA</div>
+      <app-sala [asientos]="asientos()" [yo]="cliente().usuario()" [bloqueados]="bloqueados()" [novedades]="cliente().novedades()" (pulsado)="pulsar($event)" (detalle)="mostrar($event)" />
+      <p class="detalle-asiento" data-rol="detalle">{{ detalle() }}</p>
+      <ul class="leyenda">
+        <li><i class="muestra disponible"></i>Disponible</li><li><i class="muestra mio"></i>Reservado por mí</li><li><i class="muestra comprado"></i>Comprado por mí</li>
+        <li><i class="muestra reservado"></i>Reservado por otro</li><li><i class="muestra vendido"></i>Vendido a otro</li>
+      </ul>
+    </div>
+
+    <aside class="resumen-compra" aria-label="Tu reserva">
+      <h3>Tu reserva</h3>
+      @if (mios().length) {
+        <ul class="lista-reserva">
+          @for (a of mios(); track a.id) { <li><strong>{{ a.id }}</strong><span>Fila {{ a.fila }}</span><span class="precio">{{ dinero(a.precio) }}</span></li> }
+        </ul>
+        <p class="total-grande" data-rol="total">Total {{ dinero(total()) }}</p>
+        <label class="reloj">Tiempo para pagar
+          <progress [max]="cliente().reservaMs()" [value]="restante()" aria-label="Tiempo restante para pagar"></progress>
+          <strong class="reloj-texto" [class.urgente]="restante() <= 10000">{{ segundos(restante()) }} s</strong>
+        </label>
+      } @else {
+        <p class="vacio">Aún no has reservado asientos. Pulsa uno disponible para empezar.</p>
+      }
+      <button type="button" class="boton primario ancho-total" data-rol="comprar" (click)="abrirFactura()" [disabled]="!mios().length || !cliente().conectado()">Comprar</button>
+    </aside>
+  </div>
+
+  <p class="mensaje" [class.error]="mensaje().error" role="status" data-rol="mensaje">{{ mensaje().texto }}</p>
+
+  @if (metricas()) {
+    <dl class="metricas">
+      <div><dt>{{ mecanismo() === 'ws' ? 'Mensajes recibidos' : 'Solicitudes GET/POST' }}</dt><dd>{{ cliente().metricas().peticiones }}</dd></div>
+      <div><dt>Bytes recibidos</dt><dd>{{ dineroEs(cliente().metricas().bytes) }}</dd></div>
+      @if (mecanismo() === 'polling') { <div><dt>Consultas sin cambios</dt><dd>{{ cliente().metricas().sinCambios }}</dd></div> }
+      <div><dt>Cambios detectados</dt><dd>{{ cliente().metricas().cambios }}</dd></div>
+      <div><dt>Latencia media</dt><dd>{{ lecturaMedia() }}</dd></div>
+    </dl>
+  }
+
+  <details class="registro" [open]="metricas()">
+    <summary>{{ mecanismo() === 'ws' ? 'Mensajes intercambiados' : 'Solicitudes realizadas' }} ({{ cliente().registro().length }})</summary>
+    <ol class="registro-lista" data-rol="registro">
+      @for (l of cliente().registro(); track $index) {
+        <li [class.util]="l.util" [class.inutil]="!l.util"><span class="hora">{{ l.hora }}</span><span class="sentido">{{ l.sentido }}</span><span class="texto">{{ l.texto }}</span><span class="bytes">{{ l.bytes ? l.bytes + ' B' : '' }}</span><span class="detalle-linea">{{ l.detalle }}{{ l.ms !== undefined ? ' (' + l.ms + ' ms)' : '' }}</span></li>
+      }
+    </ol>
+  </details>
+</article>
+
+<dialog #dlgFactura class="factura">
+  <h2>Factura</h2>
+  <table>
+    <thead><tr><th>Asiento</th><th>Fila</th><th>Precio</th></tr></thead>
+    <tbody>@for (a of mios(); track a.id) { <tr><td>{{ a.id }}</td><td>{{ a.fila }}</td><td>{{ dinero(a.precio) }}</td></tr> }</tbody>
+    <tfoot><tr><th colspan="2">Total</th><th>{{ dinero(total()) }}</th></tr></tfoot>
+  </table>
+  <p class="sub">Cliente: {{ cliente().usuario() }}</p>
+  <div class="acciones">
+    <button type="button" class="boton" data-rol="facturaCancelar" (click)="cerrarFactura()">Cancelar</button>
+    <button type="button" class="boton primario" data-rol="facturaConfirmar" (click)="confirmarCompra()">Confirmar compra</button>
+  </div>
+</dialog>

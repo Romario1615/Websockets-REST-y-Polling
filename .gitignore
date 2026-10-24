@@ -1,0 +1,14 @@
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+*.log
+# Material de entrega que se mantiene solo en local
+evidencias/
+informe/
+video/
+.impeccable/
+.playwright-mcp/
+*.docx
+*.pdf
+*.mp4

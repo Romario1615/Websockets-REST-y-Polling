@@ -1,0 +1,22 @@
+<main class="contenedor">
+  <h1>Panel de administrador</h1>
+  <p class="intro">Estado global de los asientos, actualizado por WebSocket. Los botones afectan a todos los usuarios conectados.</p>
+  <section class="contadores" aria-label="Resumen de asientos">
+    <div class="contador disponible"><strong>{{ cuenta().disponibles }}</strong><span>Disponibles</span></div>
+    <div class="contador reservado"><strong>{{ cuenta().reservados }}</strong><span>Reservados</span></div>
+    <div class="contador vendido"><strong>{{ cuenta().vendidos }}</strong><span>Vendidos</span></div>
+  </section>
+  <section class="controles">
+    <button type="button" class="boton" id="liberar" (click)="liberar()">Liberar todo</button>
+    <button type="button" class="boton peligro" id="resetear" (click)="resetear()">Resetear asientos</button>
+    <span class="mensaje" role="status">{{ mensaje() }}</span>
+  </section>
+  <app-sala [asientos]="cliente.asientos()" [bloqueados]="true" />
+  <table class="tabla-admin">
+    <thead><tr><th>Asiento</th><th>Precio</th><th>Estado</th><th>Usuario</th></tr></thead>
+    <tbody>
+      @for (a of ocupados(); track a.id) { <tr><td>{{ a.id }}</td><td>${{ a.precio }}</td><td>{{ a.estado }}</td><td>{{ a.usuario }}</td></tr> }
+      @empty { <tr><td colspan="4">Todos los asientos están disponibles.</td></tr> }
+    </tbody>
+  </table>
+</main>

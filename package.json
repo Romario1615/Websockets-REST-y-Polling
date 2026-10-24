@@ -1,0 +1,24 @@
+{
+  "name": "websockets-rest-y-polling",
+  "version": "1.0.0",
+  "description": "Practica 2 de Aplicaciones Distribuidas: reserva de asientos de cine con REST + Polling y WebSockets (Socket.IO). Servidor Express y interfaz Angular.",
+  "main": "server.js",
+  "scripts": {
+    "instalar": "npm install && npm --prefix frontend install",
+    "build": "npm --prefix frontend run build",
+    "start": "node app.js",
+    "test": "node --test tests/pruebas.test.js",
+    "experimento": "node herramientas/experimento.js"
+  },
+  "keywords": [],
+  "author": "Romario Javier Alban Moreta",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.3.0",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}
