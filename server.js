@@ -16,16 +16,23 @@ function crearServidor({ reservaMs = Number(process.env.RESERVA_MS || 30000) } =
   const app = express();
   const servidorHttp = http.createServer(app);
   // Solo se aceptan conexiones WebSocket del mismo origen (evita el secuestro entre sitios). Los clientes sin Origin (pruebas, herramientas) se permiten.
-  const mismoOrigen = (origen, host) => { try { return new URL(origen).host === host; } catch { return false; } };
+  // Lista de hosts aceptados (evita el DNS rebinding). Para abrir la app desde otra máquina: ALLOWED_HOSTS=nombre1,nombre2
+  const hostsPermitidos = new Set(['localhost', '127.0.0.1', '[::1]', ...String(process.env.ALLOWED_HOSTS || '').split(',').map((h) => h.trim()).filter(Boolean)]);
+  const hostValido = (host) => typeof host === 'string' && hostsPermitidos.has(host.replace(/:\d+$/, ''));
+  const mismoOrigen = (origen, host) => { try { return hostValido(host) && new URL(origen).host === host; } catch { return false; } };
   const io = new Server(servidorHttp, {
     transports: ['websocket'],
-    allowRequest: (req, aceptar) => aceptar(null, !req.headers.origin || mismoOrigen(req.headers.origin, req.headers.host)),
+    allowRequest: (req, aceptar) => aceptar(null, hostValido(req.headers.host) && (!req.headers.origin || mismoOrigen(req.headers.origin, req.headers.host))),
   });
 
   const usuarioValido = (u) => typeof u === 'string' && u.trim().length >= 1 && u.trim().length <= 30 && !/[<>"'&]/.test(u);
   const limpiar = (u) => String(u).trim();
 
   // ---- Conteo de solicitudes HTTP y bytes transferidos (para la comparación) ----
+  app.use((req, res, next) => {
+    if (!hostValido(req.headers.host)) return res.status(421).json({ ok: false, error: 'Host no permitido.' });
+    next();
+  });
   app.use((req, res, next) => {
     let bytes = 0;
     const escribir = res.write.bind(res);

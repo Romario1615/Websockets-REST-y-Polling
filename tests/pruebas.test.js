@@ -171,3 +171,26 @@ test('Seguridad: se rechaza la conexión WebSocket desde otro origen', async () 
   assert.equal(resultado, 'rechazada');
   await t.cerrar();
 });
+
+test('Seguridad: una reserva no se renueva y hay un máximo por usuario', async () => {
+  const t = await iniciar(60000);
+  await t.post('/api/asientos/A1/reservar', { usuario: 'Ana' });
+  const antes = (await (await fetch(t.base + '/api/asientos')).json()).asientos.find((a) => a.id === 'A1').hasta;
+  await new Promise((r) => setTimeout(r, 50));
+  await t.post('/api/asientos/A1/reservar', { usuario: 'Ana' });
+  const despues = (await (await fetch(t.base + '/api/asientos')).json()).asientos.find((a) => a.id === 'A1').hasta;
+  assert.equal(despues, antes);
+  for (const id of ['A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8']) assert.equal((await t.post('/api/asientos/' + id + '/reservar', { usuario: 'Ana' })).status, 200);
+  assert.equal((await t.post('/api/asientos/A9/reservar', { usuario: 'Ana' })).status, 409);
+  await t.cerrar();
+});
+
+test('Seguridad: se rechaza un Host que no está en la lista (DNS rebinding)', async () => {
+  const t = await iniciar();
+  const r = await new Promise((resolver) => {
+    const req = require('node:http').request({ host: '127.0.0.1', port: t.s.servidorHttp.address().port, path: '/api/asientos', headers: { Host: 'sitio-atacante.example' } }, (res) => { res.resume(); resolver(res.statusCode); });
+    req.end();
+  });
+  assert.equal(r, 421);
+  await t.cerrar();
+});

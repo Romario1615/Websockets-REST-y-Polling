@@ -24,7 +24,7 @@ npm run experimento  # compara Polling (0,5/1/2/5 s) con WebSocket → evidencia
 node herramientas/handshake.js   # cabeceras reales del handshake WebSocket y de una consulta REST
 ```
 
-Variables opcionales: `PORT`, `HOST`, `RESERVA_MS` (duración de la reserva; 30000 por defecto).
+Variables opcionales: `PORT`, `HOST`, `RESERVA_MS` (duración de la reserva; 30000 por defecto) y `ALLOWED_HOSTS` (nombres de host extra aceptados; por defecto solo `localhost` y `127.0.0.1`). Cada usuario puede tener hasta 8 asientos reservados a la vez.
 
 ## Reglas del escenario
 
